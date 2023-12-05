@@ -158,7 +158,7 @@ experiments = [
 debug = False
 
 for i, experiment in enumerate(experiments):
-    print(f"{c.OKBLUE}Експеримент {i+1}{c.END}")
+    print(f"{c.BOLD}{c.OKBLUE}Експеримент {i+1}{c.END}")
     pbs = [voter.public_key for voter in voter_order]
     b1 = voter1.encrypt_with_all_keys(pbs, "Candidate A")
     b2 = voter2.encrypt_with_all_keys(pbs, "Candidate B")
