@@ -141,24 +141,27 @@ class Voter:
         print(new_ballot_list)
         return new_ballot_list
 
-candidates = ["Candidate A", "Candidate B"]
-voter1 = Voter("A")
-voter2 = Voter("B")
-voter3 = Voter("C")
-voter4 = Voter("D")
-
-voter_order = [voter1, voter2, voter3, voter4]
-
 experiments = [
     {"cheater_id": None, "fabricate": None},
     {"cheater_id": 0, "fabricate": 2},
     {"cheater_id": 1, "fabricate": 0},
 ]
 
-debug = False
+debug = True
 
 for i, experiment in enumerate(experiments):
-    print(f"{c.BOLD}{c.OKBLUE}Експеримент {i+1}{c.END}")
+    candidates = ["Candidate A", "Candidate B"]
+    voter1 = Voter("A")
+    voter2 = Voter("B")
+    voter3 = Voter("C")
+    voter4 = Voter("D")
+
+    voter_order = [voter1, voter2, voter3, voter4]
+
+    print(f"{c.BOLD}{c.OKBLUE}Експеримент {i+1}. {c.END}", end='')
+    if experiment["cheater_id"] is not None:
+        print(f"{c.OKBLUE}Виборець {voter_order[experiment['cheater_id']].name} підробляє бюлетень виборця {voter_order[experiment['fabricate']].name}.{c.END}", end='')
+    print()
     pbs = [voter.public_key for voter in voter_order]
     b1 = voter1.encrypt_with_all_keys(pbs, "Candidate A")
     b2 = voter2.encrypt_with_all_keys(pbs, "Candidate B")
