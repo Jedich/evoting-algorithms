@@ -6,17 +6,16 @@ import re
 class c:
     OKBLUE = '\033[94m'
     GREEN = '\033[92m'
-    WARNING = '\033[91m'
+    WARNING = '\033[93m'
+    ERROR = '\033[91m'
     BOLD = '\033[1m'
     BOLDGREEN = '\033[1m' + '\033[92m'
     END = '\033[0m'
 
 class Bureau:
-    def __init__(self, candidates, debug=False):
-        self.candidates = candidates
+    def __init__(self, debug=False):
         self.registration_ids = {}
         self.enc_public_key, self.enc_private_key = elgamal.elgamal_receiver_keypair()
-        self.eas = []
         self.debug = debug
 
     def generate_registration_id(self, n=10):
@@ -48,25 +47,8 @@ class Bureau:
 
         return id
     
-    def send_voter_list(self, ea1, ea2):
-        self.eas = [ea1, ea2]
-        ea2.assigned_voters = dict(list(self.registration_ids.items())[len(self.registration_ids)//2:])
-        ea1.assigned_voters = dict(list(self.registration_ids.items())[:len(self.registration_ids)//2])
-
-    
-    def print_results(self):
-        vote_dict = {}
-
-        for candidate in self.candidates:
-            vote_dict[candidate] = 0
-
-        for ea in self.eas:
-            for vote in ea.votes:
-                candidate = vote["candidate"]
-                vote_dict[candidate] += 1
-
-        print(c.BOLD + '\033[96m' + "Результати голосування:" + c.END)
-        print(*vote_dict.items(), sep = "\n")
+    def send_voter_list(self, ea):
+        ea.assigned_voters = self.registration_ids
 
 
 class Voter:
@@ -86,7 +68,7 @@ class Voter:
 
             self.registration_id = bureau.register_voter(encrypted_message, signature, signature_key)
         except Exception as e:
-            print(c.WARNING + "Помилка:" + c.END, e)
+            print(c.WARNING + "Помилка від БР:" + c.END, e)
 
     def generate_id(self, n=3):
         range_start = 10**(n-1)
@@ -103,12 +85,13 @@ class Voter:
 
             self.election_authority.receive_vote(encrypted_vote, signature, signature_key)
         except Exception as e:
-            print(c.WARNING + "Помилка:" + c.END, e)
+            print(c.ERROR + "Помилка від ВК:" + c.END, e)
 
 
 class ElectionAuthority:
-    def __init__(self, name, bureau):
+    def __init__(self, name, candidates, bureau):
         self.name = name
+        self.candidates = candidates
         self.bureau = bureau
         self.assigned_voters = {}
         self.votes = []
@@ -131,7 +114,7 @@ class ElectionAuthority:
         if reg_id not in self.assigned_voters:
             raise Exception(f"Виборець {voter_id} не зареєстрований у БР")
 
-        if candidate not in self.bureau.candidates:
+        if candidate not in self.candidates:
             raise Exception(f"{voter_id}. Кандидата '{candidate}' не існує")
         
         if self.assigned_voters[reg_id] == None:
@@ -147,18 +130,31 @@ class ElectionAuthority:
         for vote in self.votes:
             print(f"{vote['id']}: {vote['candidate']}")
 
+    def print_results(self):
+        vote_dict = {}
+
+        for candidate in self.candidates:
+            vote_dict[candidate] = 0
+
+        for vote in self.votes:
+            candidate = vote["candidate"]
+            vote_dict[candidate] += 1
+
+        print(c.BOLD + '\033[96m' + "Результати голосування:" + c.END)
+        print(*vote_dict.items(), sep = "\n")
+
 candidates = ["Кандидат A", "Кандидат B"]
 
-bureau = Bureau(candidates)
-# bureau = Bureau(candidates, debug=True)
+bureau = Bureau()
+# bureau = Bureau(debug=True)
 
-ea = ElectionAuthority("ВК 1", bureau)
-ea2 = ElectionAuthority("ВК 2", bureau)
+ea = ElectionAuthority("ВК 1", candidates, bureau)
 
 voter1 = Voter("Виборець 1", "Voter_1_543685", ea)
 voter2 = Voter("Виборець 2", "Voter_2_81273", ea)
-voter3 = Voter("Виборець 3", "V3_982734", ea2)
-voter4 = Voter("Виборець 4", "Voter_4_112", ea2)
+voter3 = Voter("Виборець 3", "V3_982734", ea)
+voter4 = Voter("Виборець 4", "Voter_4_112", ea)
+voter5 = Voter("Виборець 5", "Voter_55334345", ea)
 
 voter1.get_registration_id(bureau)
 voter2.get_registration_id(bureau)
@@ -166,7 +162,7 @@ voter2.get_registration_id(bureau)
 voter3.get_registration_id(bureau)
 voter4.get_registration_id(bureau)
 
-bureau.send_voter_list(ea, ea2)
+bureau.send_voter_list(ea)
 
 voter1.vote("Кандидат A")
 
@@ -177,9 +173,9 @@ voter3.vote("Кандидат A") # Виборець, що голосує дві
 
 voter4.vote("Кандидат C") # Виборець, що голосує за неіснуючого кандидата
 voter4.vote("Кандидат B")
+voter5.vote("Кандидат B")
 
 
 ea.print_votes()
-ea2.print_votes()
 
-bureau.print_results()
+ea.print_results()
