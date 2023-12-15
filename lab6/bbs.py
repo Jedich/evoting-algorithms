@@ -1,13 +1,5 @@
 import math
 from random import randint
-import sys
-import binascii
-
-"""
-Algorithm of Miller-Rabin
-Implementation based on the following wikipedia page : 
-https://fr.wikipedia.org/wiki/Test_de_primalit%C3%A9_de_Miller-Rabin
-"""
 
 def generate_bits(length, x, n):
     out = ''
